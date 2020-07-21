@@ -1,0 +1,4 @@
+.vscode
+aurora/**/__pycache__
+logs/*
+!logs/.gitkeep

@@ -1,4 +1,4 @@
-"""This is where the customization logic happens. 
+"""This is where the customization logic happens.
 Let's have a runner instance for every device.
 """
 

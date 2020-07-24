@@ -30,43 +30,26 @@ class DutAuthFilter:
         return comp_proc.stdout
 
     @classmethod
-    def _get_ids(cls):
-        """Runs an adb subprocess command to get the authorized DUT IDs
+    def _get_serial_nums(cls):
+        """Runs an adb subprocess command to get the authorized DUT Serial Numbers
 
         Returns:
-            ids (tuple): An immutable list of authorized devices
+            serial_nums (tuple): An immutable list of authorized serial numbers
         """
         command = "adb devices | grep device"
         raw_text = cls._run_sub_process(command)
-        current_ids = []
+        current_serial_nums = []
         new_line_split = raw_text.split("\n")
         for str_split in new_line_split:
             # This effectively removes the "List of devices attached"
             if new_line_split.index(str_split) != 0:
-                # Get the id part of "random_id\tdevice" string
-                id = str_split.split("device")[0].strip()
-                # Check if the id is truthy (not an empty string)
-                if id:
-                    current_ids.append(id)
-        # Return  local ids
-        return tuple(current_ids[:])
-
-    @classmethod
-    def _get_serial_no(cls, id):
-        """Returns the android version of a DUT
-
-        Parameters:
-            id (str): The DUT ID
-        Returns:
-            model_name (str): The model (market) name of the DUT
-        Notes:
-            Some DUT models, specifically newer ones, will have their SN
-            equal to their DUT ID. Older ones won't have this attribute
-            equality.
-        """
-        command = f"adb -s {id} shell getprop ro.boot.serialno"
-        raw_text = cls._run_sub_process(command)
-        return raw_text.strip()
+                # Get the serial no. part of "serial_no\tdevice" string
+                sn = str_split.split("device")[0].strip()
+                # Check if the sn is truthy (not an empty string)
+                if sn:
+                    current_serial_nums.append(sn)
+        # Return a copy (by value) of the serial_nums
+        return tuple(current_serial_nums[:])
 
     @classmethod
     def _get_imei(cls, id):
@@ -122,30 +105,30 @@ class DutAuthFilter:
         Raises:
             AssertionError: If the length of all DUT attrs are not equal
         """
-        ids = cls._get_ids()
+        serial_nums = cls._get_serial_nums()
+        print(serial_nums)
         # Get DUT attrs
-        serial_nums = tuple([cls._get_serial_no(id) for id in ids])
-        imeis = tuple([cls._get_imei(id) for id in ids])
-        android_vers = tuple([cls._get_android_ver(id) for id in ids])
-        model_names = tuple([cls._get_model_name(id) for id in ids])
+        imeis = tuple([cls._get_imei(sn) for sn in serial_nums])
+        android_vers = tuple([cls._get_android_ver(sn) for sn in serial_nums])
+        model_names = tuple([cls._get_model_name(sn) for sn in serial_nums])
 
         # Check if every attr length are equal. Raise an Assertion Error if not.
         # This could never (theoretically) happen as the methods that fetches
-        # the attrs depend on the _get_ids() immutable list return value.
+        # the attrs depend on the _get_serial_nums() immutable list return value.
         # An edge-case would be if one of adb shell commands' behavior changes at some point.
         length_list = [
-            len(attr) for attr in (ids, imeis, android_vers, model_names, serial_nums)
+            len(attr) for attr in (serial_nums, imeis, android_vers, model_names)
         ]
         if len(set(length_list)) != 1:
             raise AssertionError("The length of DUT attrs are not equal")
 
         # Create a list of DUT data objects
-        Dut = namedtuple("Dut", "id serial_no imei android_ver model_name")
+        Dut = namedtuple("Dut", "serial_no imei android_ver model_name")
         # Map every attr element to a single DUT data object
         auth_duts = [
-            Dut(id, sn, imei, a_ver, m_name)
-            for (id, sn, imei, a_ver, m_name) in zip(
-                ids, serial_nums, imeis, android_vers, model_names,
+            Dut(sn, imei, a_ver, m_name)
+            for (sn, imei, a_ver, m_name) in zip(
+                serial_nums, imeis, android_vers, model_names
             )
         ]
         cls.authorized_duts = auth_duts[:]

@@ -25,9 +25,14 @@ class DutAuthFilter:
             command (str): The shell command to run
         Returns:
             stdout (str): The standard out of the process
+        Raises:
+            ValueError: If the the subprocess does not produce an output
         """
         comp_proc = subprocess.run(command, capture_output=True, text=True, shell=True)
-        return comp_proc.stdout
+        res = comp_proc.stdout
+        if not res:
+            raise ValueError("The shell command did not produce an output")
+        return res
 
     @classmethod
     def _get_serial_nums(cls):
@@ -48,11 +53,11 @@ class DutAuthFilter:
                 # Check if the sn is truthy (not an empty string)
                 if sn:
                     current_serial_nums.append(sn)
-        # Return a copy (by value) of the serial_nums
+        # Return a copy (by value) of serial_nums
         return tuple(current_serial_nums[:])
 
     @classmethod
-    def _get_imei(cls, id):
+    def _get_imei(cls, serial_no):
         """Get the IMEI of a DUT
 
         Parameters:
@@ -61,7 +66,7 @@ class DutAuthFilter:
             imei (str): The IMEI of the DUT
         """
         command = (
-            f"adb -s {id} shell "
+            f"adb -s {serial_no} shell "
             + '"service call iphonesubinfo 1 | toybox cut -d \\"'
             + "'\\\""
             + "  -f2 | toybox grep -Eo '[0-9]' | toybox xargs | toybox sed 's/\\ //g'"
@@ -71,7 +76,7 @@ class DutAuthFilter:
         return raw_text.strip()
 
     @classmethod
-    def _get_android_ver(cls, id):
+    def _get_android_ver(cls, serial_no):
         """Returns the android version of a DUT
 
         Parameters:
@@ -79,12 +84,12 @@ class DutAuthFilter:
         Returns:
             android_ver (str): The android version of the DUT
         """
-        command = f"adb -s {id} shell getprop ro.build.version.release"
+        command = f"adb -s {serial_no} shell getprop ro.build.version.release"
         raw_text = cls._run_sub_process(command)
         return raw_text.strip()
 
     @classmethod
-    def _get_model_name(cls, id):
+    def _get_model_name(cls, serial_no):
         """Returns the android version of a DUT
 
         Parameters:
@@ -92,7 +97,7 @@ class DutAuthFilter:
         Returns:
             model_name (str): The model (market) name of the DUT
         """
-        command = f"adb -s {id} shell getprop ro.product.model"
+        command = f"adb -s {serial_no} shell getprop ro.product.model"
         raw_text = cls._run_sub_process(command)
         return raw_text.strip()
 
@@ -106,7 +111,7 @@ class DutAuthFilter:
             AssertionError: If the length of all DUT attrs are not equal
         """
         serial_nums = cls._get_serial_nums()
-        print(serial_nums)
+
         # Get DUT attrs
         imeis = tuple([cls._get_imei(sn) for sn in serial_nums])
         android_vers = tuple([cls._get_android_ver(sn) for sn in serial_nums])
@@ -145,6 +150,7 @@ class DutMonitor(Thread):
         self.monitor = pyudev.Monitor.from_netlink(context)
         self.monitor.filter_by(subsystem="tty")
         # The Python3 way of calling the Thread's __init__() method
+        # Ref: https://www.bogotobogo.com/python/Multithread/python_multithreading_subclassing_creating_threads.php
         # Alternatives: Thread.__init__(self) or super(DutMonitor, self).__init__()
         super().__init__()
 

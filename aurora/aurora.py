@@ -5,10 +5,7 @@ __maintainer__ = "Simoun De Vera"
 
 
 from customization import CustomizationRunner
-from android_device_monitor import AndroidDeviceMonitor
+from dut_monitor import DutMonitor
 
-adm = AndroidDeviceMonitor()
+adm = DutMonitor()
 adm.start()
-print("Hello")
-runner = CustomizationRunner("glb")
-print(runner)

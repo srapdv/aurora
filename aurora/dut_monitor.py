@@ -142,7 +142,7 @@ class DutAuthFilter:
 
 
 class DutMonitor(Thread):
-    """Represents a dut (device) monitor running in the background"""
+    """Represents a DUT (device) monitor running in the background"""
 
     def __init__(self):
         """Overrides the Thread's __init__ method"""
@@ -153,6 +153,8 @@ class DutMonitor(Thread):
         # Ref: https://www.bogotobogo.com/python/Multithread/python_multithreading_subclassing_creating_threads.php
         # Alternatives: Thread.__init__(self) or super(DutMonitor, self).__init__()
         super().__init__()
+        # Kill this thread if the Main thread stops
+        self.daemon = True
 
     def run(self):
         """Overrides the Thread's run method"""

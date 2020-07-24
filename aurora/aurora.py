@@ -5,7 +5,7 @@ __maintainer__ = "Simoun De Vera"
 
 
 from customization import CustomizationRunner
-from dut_monitor import DutMonitor
+from dut_monitor import DutMonitor, DutAuthFilter
 
 adm = DutMonitor()
 adm.start()

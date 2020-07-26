@@ -1,4 +1,4 @@
-"""Set of classes that analyzes and capture connected DUTs (devices)"""
+"""Set of classes that analyzes and capture connected Devices Under Customization (DUC) """
 __author__ = "Jego Carlo Ramos, Sarah Opena"
 __copyright__ = "Copyright (C) 2020, Blackpearl Technology"
 __maintainer__ = "Jego Carlo Ramos"
@@ -10,13 +10,13 @@ import pyudev
 import subprocess
 
 
-class DutAuthFilter:
+class DucAuthFilter:
     """A utility class that filters and fetches
-    authorized and un-authorized DUTs (devices)"""
+    authorized and un-authorized DUCs"""
 
     @classmethod
     def _get_serial_nums(cls):
-        """Runs an adb subprocess command to get the authorized DUT Serial Numbers
+        """Runs an adb subprocess command to get the authorized DUC Serial Numbers
 
         Returns:
             serial_nums (tuple): An immutable list of authorized serial numbers
@@ -24,14 +24,13 @@ class DutAuthFilter:
         adb_auth_key = "device"
         command = f"adb devices | grep {adb_auth_key}"
         result = cls._handle_value_error_and_result(cls._run_sub_process, command)
-        if result:
-            return cls.clean_up_for_serial_nums(adb_auth_key, result)
-        else:
-            return ()
+
+        # Return the serial no.s if the result is truthy, else return an empty tuple
+        return cls._clean_up_for_serial_nums(adb_auth_key, result) if result else ()
 
     @classmethod
     def get_unauthorized_serial_nums(cls):
-        """Runs an adb subprocess command to get the unauthorized DUT Serial Numbers
+        """Runs an adb subprocess command to get the unauthorized DUC Serial Numbers
 
         Returns:
             unauthorized_serial_nums (tuple): An immutable list of unauthorized serial numbers
@@ -39,20 +38,18 @@ class DutAuthFilter:
         adb_not_auth_key = "unauthorized"
         command = f"adb devices | grep {adb_not_auth_key}"
         result = cls._handle_value_error_and_result(cls._run_sub_process, command)
-        if result:
-            return cls.clean_up_for_serial_nums(adb_not_auth_key, result)
-        else:
-            # Return an empty tuple if no un-authorized devices are found
-            return ()
+
+        # Return the serial no.s if the result is truthy, else return an empty tuple
+        return cls._clean_up_for_serial_nums(adb_not_auth_key, result) if result else ()
 
     @classmethod
     def _get_imei(cls, serial_no):
-        """Get the IMEI of a DUT
+        """Get the IMEI of a DUC
 
         Parameters:
-            id (str): The DUT ID
+            serial_no (str): The DUC's unique identifier
         Returns:
-            imei (str): The IMEI of the DUT
+            imei (str): The IMEI of the DUC
         """
         command = (
             f"adb -s {serial_no} shell "
@@ -65,36 +62,36 @@ class DutAuthFilter:
 
     @classmethod
     def _get_android_ver(cls, serial_no):
-        """Returns the android version of a DUT
+        """Returns the android version of a DUC
 
         Parameters:
-            id (str): The DUT ID
+            serial_no (str): The DUC's unique identifier
         Returns:
-            android_ver (str): The android version of the DUT
+            android_ver (str): The android version of the DUC
         """
         command = f"adb -s {serial_no} shell getprop ro.build.version.release"
         return cls._handle_value_error_and_result(cls._run_sub_process, command)
 
     @classmethod
     def _get_model_name(cls, serial_no):
-        """Returns the model name of a DUT
+        """Returns the model name of a DUC
 
         Parameters:
-            id (str): The DUT ID
+            serial_no (str): The DUC's unique identifier
         Returns:
-            model_name (str): The model (market) name of the DUT
+            model_name (str): The model (market) name of the DUC
         """
         command = f"adb -s {serial_no} shell getprop ro.product.model"
         return cls._handle_value_error_and_result(cls._run_sub_process, command)
 
     @classmethod
     def get_duts(cls):
-        """Returns a list of authorized DUTs
+        """Returns a list of authorized DUCs
 
         Returns:
-            Dut (tuple of namedtuples): An immutable data object
+            Duc (tuple of namedtuples): An immutable data object
         Raises:
-            AssertionError: If the length of all DUT attrs are not equal
+            AssertionError: If the length of all DUC attrs are not equal
         """
         serial_nums = cls._get_serial_nums()
 
@@ -111,13 +108,13 @@ class DutAuthFilter:
             len(attr) for attr in (serial_nums, imeis, android_vers, model_names)
         ]
         if len(set(length_list)) != 1:
-            raise AssertionError("The length of DUT attrs are not equal")
+            raise AssertionError("The length of DUC attrs are not equal")
 
-        # Create a list of DUT data objects
-        Dut = namedtuple("Dut", "serial_no imei android_ver model_name")
-        # Map every attr element to a single DUT data object
+        # Create a tuple of DUC data objects
+        Duc = namedtuple("Duc", "serial_no imei android_ver model_name")
+        # Map the attr elements to DUC data objects
         auth_duts = [
-            Dut(sn, imei, a_ver, m_name)
+            Duc(sn, imei, a_ver, m_name)
             for (sn, imei, a_ver, m_name) in zip(
                 serial_nums, imeis, android_vers, model_names
             )
@@ -144,23 +141,25 @@ class DutAuthFilter:
         return res
 
     @staticmethod
-    def _handle_value_error_and_result(func, *args):
-        """Handles the result and Value Error of a function the invokes a subprocess command
+    def _handle_value_error_and_result(sub_func, *args):
+        """A utility method that handles the result and Value Error of a function
+        the invokes a subprocess command
+
         Parameters:
-            func (function) - The method to execute
-            args (*args) - The parameters of the method to execute
+            sub_func (function) - The subprocess method to execute
+            args (*args) - The parameters of the method
 
         Returns:
-            result (str) - The result of the function if valid
+            result (str) - The result of the subprocess function if valid
             result (None) - If the method raises a Value error
         """
         try:
-            return func(*args)
+            return sub_func(*args)
         except ValueError:
             return None
 
     @staticmethod
-    def clean_up_for_serial_nums(adb_auth_key, raw_text):
+    def _clean_up_for_serial_nums(adb_auth_key, raw_text):
         """A utility method that returns the serial nums from the 'adb devices | grep <auth_key>' command
 
         Parameters:
@@ -174,7 +173,7 @@ class DutAuthFilter:
         sn = None
         for str_split in new_line_split:
             if adb_auth_key == "device":
-                # This effectively removes the "List of devices attached"
+                # This effectively removes the "List of devices attached" element
                 if new_line_split.index(str_split) != 0:
                     # Get the serial no. part of "serial_no\tdevice" string
                     sn = str_split.split(adb_auth_key)[0].strip()
@@ -183,7 +182,7 @@ class DutAuthFilter:
                 # adb_auth_key is "unauthorized"
                 sn = str_split.split(adb_auth_key)[0].strip()
 
-            # Check if the sn is truthy (not an empty string or None)
+            # Check if sn is truthy (not an empty string or None)
             if sn:
                 serial_nums.append(sn)
 
@@ -192,7 +191,7 @@ class DutAuthFilter:
 
 
 class DutMonitor(Thread):
-    """Represents a DUT (device) monitor running in the background"""
+    """Represents a DUCS monitor running in the background"""
 
     def __init__(self):
         """Overrides the __init__ method of the Thread class"""
@@ -210,22 +209,22 @@ class DutMonitor(Thread):
         """Overrides the run() method of the Thread class"""
         print("Observing Devices...")
         # Run the initial check for already connected duts (devices) on start-up
-        print(f"Authorized: {DutAuthFilter.get_duts()}")
-        print(f"Unauthorized: {DutAuthFilter.get_unauthorized_serial_nums()}")
+        print(f"Authorized: {DucAuthFilter.get_duts()}")
+        print(f"Unauthorized: {DucAuthFilter.get_unauthorized_serial_nums()}")
         for action, device in self.monitor:
             if action == "add":
                 # print(f"Added: {device}")
                 print("Device Added!")
                 sleep(2)  # TODO (improve): adb needs some time to load. Ugly :(
-                print(f"Authorized: {DutAuthFilter.get_duts()}")
-                print(f"Unauthorized: {DutAuthFilter.get_unauthorized_serial_nums()}")
+                print(f"Authorized: {DucAuthFilter.get_duts()}")
+                print(f"Unauthorized: {DucAuthFilter.get_unauthorized_serial_nums()}")
 
             elif action == "remove":
                 # print(f"Removed: {device}")
                 print("Device Removed!")
                 sleep(0.2)  # TODO (improve): Paranoid about that small window :/
-                print(f"Authorized: {DutAuthFilter.get_duts()}")
-                print(f"Unauthorized: {DutAuthFilter.get_unauthorized_serial_nums()}")
+                print(f"Authorized: {DucAuthFilter.get_duts()}")
+                print(f"Unauthorized: {DucAuthFilter.get_unauthorized_serial_nums()}")
 
 
 if __name__ == "__main__":

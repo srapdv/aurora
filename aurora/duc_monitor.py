@@ -1,4 +1,4 @@
-"""Set of classes that analyzes and capture connected Devices Under Customization (DUC) """
+"""Set of classes that analyzes and capture connected Devices Under Customization (DUC)"""
 __author__ = "Jego Carlo Ramos, Sarah Opena"
 __copyright__ = "Copyright (C) 2020, Blackpearl Technology"
 __maintainer__ = "Jego Carlo Ramos"
@@ -193,10 +193,14 @@ class DucAuthFilter:
 class DucMonitor(Thread):
     """Represents a DUCS monitor running in the background"""
 
+    not_auth_checker_running = False
+
     def __init__(self):
         """Overrides the __init__ method of the Thread class"""
-        self.authorized_ducs = []
-        self.unauthorized_serial_nums = []
+        self.authorized_ducs = set()
+        self.unauthorized_serial_nums = set()
+        self.given_duc = []
+        self.listeners = []
 
         # Attrs for pyudev
         context = pyudev.Context()
@@ -212,24 +216,61 @@ class DucMonitor(Thread):
 
     def run(self):
         """Overrides the run() method of the Thread class"""
-        print("Observing Devices...")
+        print("DUC Monitor running...")
+
         # Run the initial check for already connected duts (devices) on start-up
-        print(f"Authorized: {DucAuthFilter.get_duts()}")
-        print(f"Unauthorized: {DucAuthFilter.get_unauthorized_serial_nums()}")
+        self._handle_added_devices()
+
         for action, device in self.monitor:
             if action == "add":
-                # print(f"Added: {device}")
                 print("Device Added!")
                 sleep(2)  # TODO (improve): adb needs some time to load. Ugly :(
-                print(f"Authorized: {DucAuthFilter.get_duts()}")
-                print(f"Unauthorized: {DucAuthFilter.get_unauthorized_serial_nums()}")
+                self._handle_added_devices()
+
+                # Check for unauthorized DUCs
+                unauthorized_ducs = DucAuthFilter.get_unauthorized_serial_nums()
+                if unauthorized_ducs:
+                    DucMonitor.not_auth_checker_running = True
+                    while DucMonitor.not_auth_checker_running:
+                        print("Some DUCs are not authorized...")
+                        # The Device Authorization dialog takes about this long to show up
+                        sleep(3)
+                        self._handle_added_devices()
+                        unauthorized_ducs = DucAuthFilter.get_unauthorized_serial_nums()
+                        if not unauthorized_ducs:
+                            DucMonitor.not_auth_checker_running = False
 
             elif action == "remove":
-                # print(f"Removed: {device}")
                 print("Device Removed!")
                 sleep(0.2)  # TODO (improve): Paranoid about that small window :/
-                print(f"Authorized: {DucAuthFilter.get_duts()}")
-                print(f"Unauthorized: {DucAuthFilter.get_unauthorized_serial_nums()}")
+                self._handle_removed_devices()
+
+    def _handle_added_devices(self):
+        """Sends the added device to listeners"""
+        new_duc_batch = DucAuthFilter.get_duts()
+        for duc in new_duc_batch:
+            # Filter only newly plugged DUCs
+            if duc not in self.authorized_ducs:
+                # Add the new DUC to the authorized set
+                self.authorized_ducs.add(duc)
+                # Send the DUC to all listeners
+                for listener in self.listeners:
+                    listener.add(duc)
+                print("Sent to Listeners: ", duc)
+        print(self.authorized_ducs)
+
+    def _handle_removed_devices(self):
+        """Removes the DUC from all listeners"""
+        new_duc_batch = set(DucAuthFilter.get_duts())
+        # Check for the removed device
+        removed_duc = self.authorized_ducs.difference(new_duc_batch)
+        if removed_duc:
+            self.authorized_ducs = new_duc_batch
+            # Remove DUC from all lisneters
+            for listener in self.listeners:
+                listener.remove(removed_duc)
+            print("Removed from listeners: ", removed_duc)
+        print(self.authorized_ducs)
 
 
 if __name__ == "__main__":

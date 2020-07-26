@@ -12,7 +12,5 @@ print("App Starting...")
 dm = DucMonitor()
 dm.start()
 
-print("ADM running...")
-
-# The main thread will not end until the SIGINT (Ctrl + C) is intercepted
+# The main thread will pause until a SIGINT (Ctrl + C) is intercepted
 SignalHandler.listen_for_sigint()

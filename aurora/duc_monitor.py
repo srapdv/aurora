@@ -219,33 +219,22 @@ class DucMonitor(Thread):
         print("DUC Monitor running...")
 
         # Run the initial check for already connected duts (devices) on start-up
-        self._handle_added_devices()
+        self._handle_added_ducs()
+        self._handle_unauthorized_ducs()
 
         for action, device in self.monitor:
             if action == "add":
                 print("Device Added!")
                 sleep(2)  # TODO (improve): adb needs some time to load. Ugly :(
-                self._handle_added_devices()
-
-                # Check for unauthorized DUCs
-                unauthorized_ducs = DucAuthFilter.get_unauthorized_serial_nums()
-                if unauthorized_ducs:
-                    DucMonitor.not_auth_checker_running = True
-                    while DucMonitor.not_auth_checker_running:
-                        print("Some DUCs are not authorized...")
-                        # The Device Authorization dialog takes about this long to show up
-                        sleep(3)
-                        self._handle_added_devices()
-                        unauthorized_ducs = DucAuthFilter.get_unauthorized_serial_nums()
-                        if not unauthorized_ducs:
-                            DucMonitor.not_auth_checker_running = False
+                self._handle_added_ducs()
+                self._handle_unauthorized_ducs()
 
             elif action == "remove":
                 print("Device Removed!")
                 sleep(0.2)  # TODO (improve): Paranoid about that small window :/
-                self._handle_removed_devices()
+                self._handle_removed_ducs()
 
-    def _handle_added_devices(self):
+    def _handle_added_ducs(self):
         """Sends the added device to listeners"""
         new_duc_batch = DucAuthFilter.get_duts()
         for duc in new_duc_batch:
@@ -257,9 +246,8 @@ class DucMonitor(Thread):
                 for listener in self.listeners:
                     listener.add(duc)
                 print("Sent to Listeners: ", duc)
-        print(self.authorized_ducs)
 
-    def _handle_removed_devices(self):
+    def _handle_removed_ducs(self):
         """Removes the DUC from all listeners"""
         new_duc_batch = set(DucAuthFilter.get_duts())
         # Check for the removed device
@@ -270,7 +258,28 @@ class DucMonitor(Thread):
             for listener in self.listeners:
                 listener.remove(removed_duc)
             print("Removed from listeners: ", removed_duc)
-        print(self.authorized_ducs)
+
+    def _handle_unauthorized_ducs(self):
+        """Long-poll while there are un-authorized DUCs"""
+
+        # Only invoke once
+        if DucMonitor.not_auth_checker_running:
+            return
+
+        long_poll_sec = 3
+        # Check for unauthorized DUCs
+        unauthorized_ducs = DucAuthFilter.get_unauthorized_serial_nums()
+        if unauthorized_ducs:
+            DucMonitor.not_auth_checker_running = True
+            # Long poll for every <long_poll_sec> seconds
+            while DucMonitor.not_auth_checker_running:
+                print(f"Some DUCs are not authorized: \n{unauthorized_ducs}")
+                # The Device Authorization dialog takes about this long to show up
+                sleep(long_poll_sec)
+                self._handle_added_ducs()
+                unauthorized_ducs = DucAuthFilter.get_unauthorized_serial_nums()
+                if not unauthorized_ducs:
+                    DucMonitor.not_auth_checker_running = False
 
 
 if __name__ == "__main__":

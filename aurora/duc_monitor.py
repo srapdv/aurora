@@ -190,14 +190,19 @@ class DucAuthFilter:
         return tuple(serial_nums)
 
 
-class DutMonitor(Thread):
+class DucMonitor(Thread):
     """Represents a DUCS monitor running in the background"""
 
     def __init__(self):
         """Overrides the __init__ method of the Thread class"""
+        self.authorized_ducs = []
+        self.unauthorized_serial_nums = []
+
+        # Attrs for pyudev
         context = pyudev.Context()
         self.monitor = pyudev.Monitor.from_netlink(context)
         self.monitor.filter_by(subsystem="tty")
+
         # The Python3 way of calling the Thread's __init__() method
         # Ref: https://www.bogotobogo.com/python/Multithread/python_multithreading_subclassing_creating_threads.php
         # Alternatives: Thread.__init__(self) or super(DutMonitor, self).__init__()
@@ -228,5 +233,5 @@ class DutMonitor(Thread):
 
 
 if __name__ == "__main__":
-    adm = DutMonitor()
-    adm.start()
+    dm = DucMonitor()
+    dm.start()

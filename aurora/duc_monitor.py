@@ -25,7 +25,7 @@ class DucAuthFilter:
         command = f"adb devices | grep {adb_auth_key}"
         result = cls._handle_value_error_and_result(cls._run_sub_process, command)
 
-        # Return the serial no.s if the result is truthy, else return an empty tuple
+        # Return the serial numbers if the result is truthy, else return an empty tuple
         return cls._clean_up_for_serial_nums(adb_auth_key, result) if result else ()
 
     @classmethod
@@ -39,7 +39,7 @@ class DucAuthFilter:
         command = f"adb devices | grep {adb_not_auth_key}"
         result = cls._handle_value_error_and_result(cls._run_sub_process, command)
 
-        # Return the serial no.s if the result is truthy, else return an empty tuple
+        # Return the serial numbers if the result is truthy, else return an empty tuple
         return cls._clean_up_for_serial_nums(adb_not_auth_key, result) if result else ()
 
     @classmethod
@@ -85,7 +85,7 @@ class DucAuthFilter:
         return cls._handle_value_error_and_result(cls._run_sub_process, command)
 
     @classmethod
-    def get_duts(cls):
+    def get_ducs(cls):
         """Returns a list of authorized DUCs
 
         Returns:
@@ -191,7 +191,7 @@ class DucAuthFilter:
 
 
 class DucMonitor(Thread):
-    """Represents a DUCS monitor running in the background"""
+    """Represents a DUCs monitor running in the background"""
 
     not_auth_checker_running = False
 
@@ -199,7 +199,6 @@ class DucMonitor(Thread):
         """Overrides the __init__ method of the Thread class"""
         self.authorized_ducs = set()
         self.unauthorized_serial_nums = set()
-        self.given_duc = []
         self.listeners = []
 
         # Attrs for pyudev
@@ -218,25 +217,31 @@ class DucMonitor(Thread):
         """Overrides the run() method of the Thread class"""
         print("DUC Monitor running...")
 
-        # Run the initial check for already connected duts (devices) on start-up
+        # Run the initial check for already connected DUCs on start-up
         self._handle_added_ducs()
         self._handle_unauthorized_ducs()
 
         for action, device in self.monitor:
             if action == "add":
                 print("Device Added!")
-                sleep(2)  # TODO (improve): adb needs some time to load. Ugly :(
+
+                # TODO (improve): ADB needs some time to discover the DUC. Ugly :(
+                sleep(2)
+
                 self._handle_added_ducs()
                 self._handle_unauthorized_ducs()
 
             elif action == "remove":
                 print("Device Removed!")
-                sleep(0.2)  # TODO (improve): Paranoid about that small window :/
+
+                # TODO (improve): Paranoid about that small window :/
+                sleep(0.2)
+
                 self._handle_removed_ducs()
 
     def _handle_added_ducs(self):
-        """Sends the added device to listeners"""
-        new_duc_batch = DucAuthFilter.get_duts()
+        """Sends the added DUCs to listeners"""
+        new_duc_batch = DucAuthFilter.get_ducs()
         for duc in new_duc_batch:
             # Filter only newly plugged DUCs
             if duc not in self.authorized_ducs:
@@ -248,16 +253,17 @@ class DucMonitor(Thread):
                 print("Sent to Listeners: ", duc)
 
     def _handle_removed_ducs(self):
-        """Removes the DUC from all listeners"""
-        new_duc_batch = set(DucAuthFilter.get_duts())
-        # Check for the removed device
-        removed_duc = self.authorized_ducs.difference(new_duc_batch)
-        if removed_duc:
+        """Removes DUCs from all listeners"""
+        new_duc_batch = set(DucAuthFilter.get_ducs())
+        # Check for the removed DUCs
+        removed_ducs = self.authorized_ducs.difference(new_duc_batch)
+        if removed_ducs:
             self.authorized_ducs = new_duc_batch
-            # Remove DUC from all lisneters
-            for listener in self.listeners:
-                listener.remove(removed_duc)
-            print("Removed from listeners: ", removed_duc)
+            # Remove DUCs from all lisneters
+            for duc in removed_ducs:
+                for listener in self.listeners:
+                    listener.remove(duc)
+                print("Removed from listeners: ", duc)
 
     def _handle_unauthorized_ducs(self):
         """Long-poll while there are un-authorized DUCs"""

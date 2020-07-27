@@ -1,0 +1,12 @@
+version: 1
+logger:
+  level: "DEBUG"
+  format: "%(asctime)s - %(code_name)s - %(name)s - %(levelname)s - %(message)s"
+  handlers:
+    console:
+      level: "DEBUG"
+    file:
+      level: "DEBUG"
+      filename: "logs/local.log"
+      max_bytes: 10000000 # 10 MB
+      backup_count: 10 # How many log files to keep

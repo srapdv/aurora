@@ -195,11 +195,11 @@ class DucMonitor(Thread):
 
     not_auth_checker_running = False
 
-    def __init__(self):
+    def __init__(self, *listeners):
         """Overrides the __init__ method of the Thread class"""
         self.authorized_ducs = set()
         self.unauthorized_serial_nums = set()
-        self.listeners = []
+        self.listeners = [listener for listener in listeners]
 
         # Attrs for pyudev
         context = pyudev.Context()
@@ -249,8 +249,8 @@ class DucMonitor(Thread):
                 self.authorized_ducs.add(duc)
                 # Send the DUC to all listeners
                 for listener in self.listeners:
-                    listener.add(duc)
-                print("Sent to Listeners: ", duc)
+                    print(f"Sending {duc} to: {listener}")
+                    listener.add_duc(duc)
 
     def _handle_removed_ducs(self):
         """Removes DUCs from all listeners"""
@@ -262,7 +262,7 @@ class DucMonitor(Thread):
             # Remove DUCs from all lisneters
             for duc in removed_ducs:
                 for listener in self.listeners:
-                    listener.remove(duc)
+                    listener.remove_duc(duc)
                 print("Removed from listeners: ", duc)
 
     def _handle_unauthorized_ducs(self):

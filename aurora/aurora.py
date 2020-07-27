@@ -6,8 +6,13 @@ __maintainer__ = "Simoun De Vera"
 from customization import CustomizationRunner, CustomizationListener
 from duc_monitor import DucMonitor, DucAuthFilter
 from signal_handler import SignalHandler
+from helpers.logger import LoggerBuilder
 
-print("App Starting...")
+log_builder = LoggerBuilder("mayo", __name__)
+logger = log_builder.create_logger()
+
+logger.info("App Starting...")
+
 cl = CustomizationListener()
 dm = DucMonitor(cl)
 dm.start()

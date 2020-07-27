@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2020, Blackpearl Technology"
 __maintainer__ = "Jego Carlo Ramos"
 
 import logging
+from logging.handlers import RotatingFileHandler
 import yaml
 import os
 import sys
@@ -26,6 +27,12 @@ class LoggerBuilder:
         if not self._code_name:
             raise ValueError("No code_name was set!")
 
+        LoggerBuilder._configure_and_resolve_paths()
+
+    @classmethod
+    def _configure_and_resolve_paths(cls):
+        """Add logging configs and resolve paths"""
+
         # Load values from the logging_config.yaml
         base_path = pathlib.Path(__file__).absolute()
         config_path = f"{base_path.parents[1]}/config/logging_config.yaml"
@@ -33,13 +40,15 @@ class LoggerBuilder:
         with open(config_path, "r",) as stream:
             config = yaml.load(stream, Loader=yaml.FullLoader)
 
-        LoggerBuilder._log_file_path = config["logger"]["handlers"]["file"]["filename"]
-        LoggerBuilder._log_format = config["logger"]["format"]
-        LoggerBuilder._log_level_str = config["logger"]["level"]
-        LoggerBuilder._console_level = config["logger"]["handlers"]["console"]["level"]
-        LoggerBuilder._file_level = config["logger"]["handlers"]["file"]["level"]
+        cls._log_file_path = config["logger"]["handlers"]["file"]["filename"]
+        cls._log_format = config["logger"]["format"]
+        cls._log_level_str = config["logger"]["level"]
+        cls._console_level = config["logger"]["handlers"]["console"]["level"]
+        cls._file_level = config["logger"]["handlers"]["file"]["level"]
+        cls._file_max_size = config["logger"]["handlers"]["file"]["max_bytes"]
+        cls._file_backup_count = config["logger"]["handlers"]["file"]["backup_count"]
 
-    def get_logger(self):
+    def create_logger(self):
         """Create and returns the logger"""
 
         # Set-up the logging module
@@ -49,7 +58,11 @@ class LoggerBuilder:
         formatter = logging.Formatter(LoggerBuilder._log_format)
 
         # Add file handler
-        file_handler = logging.FileHandler(LoggerBuilder._log_file_path)
+        file_handler = RotatingFileHandler(
+            LoggerBuilder._log_file_path,
+            maxBytes=LoggerBuilder._file_max_size,
+            backupCount=LoggerBuilder._file_backup_count,
+        )
         file_handler.setFormatter(formatter)
         file_log_level = getattr(logging, LoggerBuilder._file_level)
         file_handler.setLevel(file_log_level)
@@ -72,5 +85,5 @@ class LoggerBuilder:
 
 if __name__ == "__main__":
     logger_builder = LoggerBuilder("mayo", __name__)
-    my_logger = logger_builder.get_logger()
+    my_logger = logger_builder.create_logger()
     my_logger.info("Sample Log")

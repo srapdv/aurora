@@ -7,6 +7,10 @@ __maintainer__ = "Simoun De Vera"
 
 from time import sleep
 from duc_listener import DucListener
+from helpers.logger import LoggerBuilder
+
+log_builder = LoggerBuilder("mayo", __name__)
+logger = log_builder.create_logger()
 
 
 class CustomizationRunner:
@@ -29,17 +33,17 @@ class CustomizationListener(DucListener):
     """Represents a Customization listener"""
 
     def __init__(self):
-        print("Customization Listener Created...")
+        logger.debug("Customization Listener Created...")
         self.started_cus_runners = []
 
     def __repr__(self):
         return f"{self.__class__.__name__}()"
 
     def add_duc(self, duc):
-        print(f"Customizing: {duc}")
+        logger.debug(f"Customizing: {duc}")
 
     def remove_duc(self, duc):
-        print(f"Stopping: {duc}")
+        logger.debug(f"Stopping: {duc}")
 
 
 if __name__ == "__main__":

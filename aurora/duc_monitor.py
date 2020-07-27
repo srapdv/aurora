@@ -9,6 +9,11 @@ from collections import namedtuple
 import pyudev
 import subprocess
 
+from helpers.logger import LoggerBuilder
+
+logger_builder = LoggerBuilder("mayo", __name__)
+logger = logger_builder.create_logger()
+
 
 class DucAuthFilter:
     """A utility class that filters and fetches
@@ -191,7 +196,7 @@ class DucAuthFilter:
 
 
 class DucMonitor(Thread):
-    """Represents a DUCs monitor running in the background"""
+    """Represents a DUC monitor running in the background"""
 
     not_auth_checker_running = False
 
@@ -215,7 +220,7 @@ class DucMonitor(Thread):
 
     def run(self):
         """Overrides the run() method of the Thread class"""
-        print("DUC Monitor running...")
+        logger.debug("DUC Monitor running...")
 
         # Run the initial check for already connected DUCs on start-up
         self._handle_added_ducs()
@@ -223,7 +228,7 @@ class DucMonitor(Thread):
 
         for action, device in self.monitor:
             if action == "add":
-                print("Device Added!")
+                logger.debug("Device Added!")
 
                 # TODO (improve): ADB needs some time to discover the DUC. Ugly :(
                 sleep(2)
@@ -232,7 +237,7 @@ class DucMonitor(Thread):
                 self._handle_unauthorized_ducs()
 
             elif action == "remove":
-                print("Device Removed!")
+                logger.debug("Device Removed!")
 
                 # TODO (improve): Paranoid about that small window :/
                 sleep(0.2)
@@ -249,7 +254,7 @@ class DucMonitor(Thread):
                 self.authorized_ducs.add(duc)
                 # Send the DUC to all listeners
                 for listener in self.listeners:
-                    print(f"Sending {duc} to: {listener}")
+                    logger.debug(f"Sending {duc} to {listener}")
                     listener.add_duc(duc)
 
     def _handle_removed_ducs(self):
@@ -262,8 +267,8 @@ class DucMonitor(Thread):
             # Remove DUCs from all lisneters
             for duc in removed_ducs:
                 for listener in self.listeners:
+                    logger.debug(f"Removing {duc} from {listener}")
                     listener.remove_duc(duc)
-                print("Removed from listeners: ", duc)
 
     def _handle_unauthorized_ducs(self):
         """Long-poll while there are un-authorized DUCs"""
@@ -279,7 +284,7 @@ class DucMonitor(Thread):
             DucMonitor.not_auth_checker_running = True
             # Long poll for every <long_poll_sec> seconds
             while DucMonitor.not_auth_checker_running:
-                print(f"Some DUCs are not authorized: \n{unauthorized_ducs}")
+                logger.debug(f"Some DUCs are not authorized: {unauthorized_ducs}")
                 # The Device Authorization dialog takes about this long to show up
                 sleep(long_poll_sec)
                 self._handle_added_ducs()

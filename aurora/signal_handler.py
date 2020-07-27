@@ -2,6 +2,10 @@
 import sys
 import signal
 import traceback
+from helpers.logger import LoggerBuilder
+
+log_builder = LoggerBuilder("mayo", __name__)
+logger = log_builder.create_logger()
 
 
 class SignalHandler:
@@ -16,7 +20,7 @@ class SignalHandler:
                     be interrupted by a signal, but the signal is only received in the
                     main thread
         """
-        print(
+        logger.info(
             f"KeyboardInterrupt (ID: {signum}) has been caught. Exiting Application..."
         )
         sys.exit(0)
@@ -26,3 +30,7 @@ class SignalHandler:
         """Pauses the main thread while waiting for SIGINT"""
         signal.signal(signal.SIGINT, cls._handle_sigint)
         signal.pause()
+
+
+if __name__ == "__main__":
+    SignalHandler.listen_for_sigint()

@@ -118,14 +118,14 @@ class DucAuthFilter:
         # Create a tuple of DUC data objects
         Duc = namedtuple("Duc", "serial_no imei android_ver model_name")
         # Map the attr elements to DUC data objects
-        auth_duts = [
+        auth_ducs = [
             Duc(sn, imei, a_ver, m_name)
             for (sn, imei, a_ver, m_name) in zip(
                 serial_nums, imeis, android_vers, model_names
             )
         ]
 
-        return tuple(auth_duts)
+        return tuple(auth_ducs)
 
     @staticmethod
     def _run_sub_process(command):

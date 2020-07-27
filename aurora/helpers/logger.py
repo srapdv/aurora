@@ -5,7 +5,6 @@ __maintainer__ = "Jego Carlo Ramos"
 
 import logging
 from logging.handlers import RotatingFileHandler
-from functools import wraps
 import yaml
 import os
 import sys

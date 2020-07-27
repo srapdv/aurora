@@ -1,14 +1,16 @@
-"""An abstraction of the logging module"""
+"""An abstraction and a decorator for the logging module"""
 __author__ = "Jego Carlo Ramos"
 __copyright__ = "Copyright (C) 2020, Blackpearl Technology"
 __maintainer__ = "Jego Carlo Ramos"
 
 import logging
 from logging.handlers import RotatingFileHandler
+from functools import wraps
 import yaml
 import os
 import sys
 import pathlib
+import time
 
 
 class LoggerBuilder:
@@ -83,7 +85,50 @@ class LoggerBuilder:
         return logging.LoggerAdapter(logger, self._code_name)
 
 
+def logger_decorator(logger_instance, log_level="DEBUG"):
+    """The Decorator pre-fix. This enables the decorator
+    to accept arguments.
+
+    Paramters:
+        logger_instance (logging.logger) - A logger instance from the logging module
+        log_level (str) - The logging debug level
+    Returns:
+        inner_func (function) - The logging function
+    """
+
+    def inner_func(original_func):
+        """A higher-order function decorator for logging
+        Parameters:
+            original_func - The original function to be decorated
+        Returns:
+            wrapper (function) - The new modified (decorated) function
+        """
+
+        def wrapper(*args, **kwargs):
+            # Capture the execution time
+            t1 = time.time()
+            result = original_func(*args, **kwargs)
+            t2 = time.time()
+            t = str(round(t2 - t1, 2))
+
+            # Log the execution
+            msg = f"{original_func.__name__}() executed with args: {args} and kwargs: {kwargs} in {t} secs"
+            log = getattr(logger_instance, log_level.lower())
+            log(msg)
+            return result
+
+        return wrapper
+
+    return inner_func
+
+
 if __name__ == "__main__":
     logger_builder = LoggerBuilder("mayo", __name__)
     my_logger = logger_builder.create_logger()
     my_logger.info("Sample Log")
+
+    @logger_decorator(my_logger, "DEBUG")
+    def sample_func(name):
+        print(name)
+
+    sample_func("hello")

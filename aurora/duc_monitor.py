@@ -113,7 +113,9 @@ class DucAuthFilter:
             len(attr) for attr in (serial_nums, imeis, android_vers, model_names)
         ]
         if len(set(length_list)) != 1:
-            raise AssertionError("The length of DUC attrs are not equal")
+            msg = "The length of DUC attrs are not equal"
+            logger.critical(msg)
+            raise AssertionError(msg)
 
         # Create a tuple of DUC data objects
         Duc = namedtuple("Duc", "serial_no imei android_ver model_name")
@@ -142,6 +144,7 @@ class DucAuthFilter:
         # It's important to strip the stdout as it sometimes only return empty spaces
         res = comp_proc.stdout.strip()
         if not res:
+            logger.debug(f"No value returned from: {command}")
             raise ValueError("The shell command did not produce an output")
         return res
 

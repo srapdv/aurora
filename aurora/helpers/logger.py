@@ -31,7 +31,7 @@ class LoggerBuilder:
 
     @classmethod
     def _configure_and_resolve_paths(cls):
-        """Add logging configs and resolve paths"""
+        """Adds logging configs and resolve paths"""
 
         # Load values from the logging_config.yaml
         base_path = pathlib.Path(__file__).absolute()
@@ -49,7 +49,7 @@ class LoggerBuilder:
         cls._file_backup_count = config["logger"]["handlers"]["file"]["backup_count"]
 
     def create_logger(self):
-        """Create and returns the logger"""
+        """Creates and returns a logger instance"""
 
         # Set-up the logging module
         logger = logging.getLogger(self._module_name)

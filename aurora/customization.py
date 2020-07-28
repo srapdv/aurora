@@ -5,6 +5,7 @@ __author__ = "Jego Carlo Ramos, Simoun De Vera"
 __copyright__ = "Copyright (C) 2020, Blackpearl Technology"
 __maintainer__ = "Simoun De Vera"
 
+import adbutils
 from time import sleep
 from duc_listener import DucListener
 from helpers.logger import LoggerBuilder
@@ -34,8 +35,10 @@ class CustomizationRunner:
         logger.info(f"Customizing: {da.imei} to {self.customize_to}")
         self.running_threads.append(da)
 
+        # Recover when the screen is turned off
         da.unlock_screen()
         sleep(2)  # Some DUCs have unlock animations
+
         da.dial(f"*%23272*{da.imei}")
         da.tap_by_text("#", match_type="exact")
         da.scroll_to_text(self.customize_to.upper())

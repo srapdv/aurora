@@ -5,6 +5,7 @@ __note__ = "Please do not modify"
 
 from functools import wraps
 import logging
+import time
 
 # Decorators built from Classes are also a thing, but they come
 # with some limitations with the help() function
@@ -36,3 +37,12 @@ def safe_run(logger_instance=None):
         return wrapper
 
     return inner_func
+
+
+def singleton(orig_class):
+    """Transforms the class to a singleton
+    Notes:
+        Remember to keep your class thread-safe
+    """
+    # TODO: Implementation
+    pass

@@ -68,7 +68,7 @@ class LoggerBuilder:
         logger.setLevel(debug_level)
         formatter = logging.Formatter(LoggerBuilder._log_format)
 
-        # Add file handler
+        # Create file handler
         file_handler = RotatingFileHandler(
             LoggerBuilder._log_file_path,
             maxBytes=LoggerBuilder._file_max_size,
@@ -78,11 +78,11 @@ class LoggerBuilder:
         file_log_level = getattr(logging, LoggerBuilder._file_level)
         file_handler.setLevel(file_log_level)
 
-        # Add stream handler
+        # Create stream handler
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
         console_log_level = getattr(logging, LoggerBuilder._console_level)
-        file_handler.setLevel(console_log_level)
+        stream_handler.setLevel(console_log_level)
 
         # Add all handlers
         logger.addHandler(file_handler)
@@ -94,10 +94,6 @@ class LoggerBuilder:
         return logging.LoggerAdapter(logger, self._code_name)
 
 
-# Decorators built from Classes are also a thing, but they come
-# with some limitations with the help() function
-# Reference:
-# https://stackoverflow.com/questions/25973376/functools-update-wrapper-doesnt-work-properly/25973438#25973438
 def logger_decorator(logger_instance, log_level="debug"):
     """A function decorator that logs the execution time and signature
     of the original function

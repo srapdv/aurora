@@ -5,6 +5,7 @@ __maintainer__ = "Jego Carlo Ramos"
 
 import logging
 from logging.handlers import RotatingFileHandler
+from functools import wraps
 import yaml
 import os
 import sys
@@ -84,16 +85,32 @@ class LoggerBuilder:
         return logging.LoggerAdapter(logger, self._code_name)
 
 
-def logger_decorator(logger_instance, log_level="DEBUG"):
+# Class decorators from Classes are also a thing, but the come
+# with some limitations with the help() function
+# Reference:
+# https://stackoverflow.com/questions/25973376/functools-update-wrapper-doesnt-work-properly/25973438#25973438
+def logger_decorator(logger_instance, log_level="debug"):
     """The Decorator pre-fix. This enables the decorator
     to accept arguments.
 
-    Paramters:
-        logger_instance (logging.logger) - A logger instance from the logging module
+    Parameters:
+        logger_instance (logging.LoggerAdapter) - A logger instance from the logging module
         log_level (str) - The logging debug level
     Returns:
         inner_func (function) - The logging function
     """
+
+    # Type check
+    if not isinstance(logger_instance, logging.LoggerAdapter):
+        raise ValueError(
+            "The logger instance passed is not a child of logging.LoggerAdapter"
+        )
+
+    valid_levels = ["info", "debug", "warning", "error", "critical"]
+    if str(log_level).lower() not in valid_levels:
+        raise ValueError(
+            f"Invalid log level passed: {log_level}, valid values: {valid_levels}"
+        )
 
     def inner_func(original_func):
         """A higher-order function decorator for logging
@@ -103,6 +120,7 @@ def logger_decorator(logger_instance, log_level="DEBUG"):
             wrapper (function) - The new modified (decorated) function
         """
 
+        @wraps(original_func)
         def wrapper(*args, **kwargs):
             # Capture the execution time
             t1 = time.time()
@@ -126,7 +144,7 @@ if __name__ == "__main__":
     my_logger = logger_builder.create_logger()
     my_logger.info("Sample Log")
 
-    @logger_decorator(my_logger, "DEBUG")
+    @logger_decorator(my_logger, "warning")
     def sample_func(name):
         print(name)
 

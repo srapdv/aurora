@@ -133,7 +133,7 @@ def logger_decorator(logger_instance, log_level="debug"):
             t = str(round(t2 - t1, 2))
 
             # Log the signature and execution time
-            msg = f"Ran {original_func.__name__}() for {t} secs with args: {args} and kwargs: {kwargs}"
+            msg = f"Executed {original_func.__name__}() for {t} secs with args: {args} and kwargs: {kwargs}"
             log = getattr(logger_instance, log_level_clean)
             log(msg)
             return result

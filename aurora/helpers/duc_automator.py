@@ -1,4 +1,4 @@
-"""A set of abstractions of the uiautomator2 module
+"""A set of abstractions of the uiautomator2 package and ADB shell commands
 Classes:
     DucAutomator
 
@@ -15,6 +15,7 @@ __maintainer__ = "Jego Carlo Ramos"
 
 from uiautomator2 import Device
 from collections import namedtuple
+from threading import Thread
 
 from helpers.logger import LoggerBuilder, logger_decorator as ld
 
@@ -27,6 +28,7 @@ class DucAutomator:
         """Initializes the DucAutomator
         Parameters:
             duc (Duc) - The DUC data object (namedtuple) to automate
+            customize_to - Where the DUC should be customized to
         """
         self.serial_no = duc.serial_no
         self.imei = duc.imei
@@ -46,7 +48,19 @@ class DucAutomator:
 
     @ld(logger)
     def unlock_screen(self):
-        """Unlocks the screen"""
+        """Unlocks the screen
+
+        Raises:
+            AssertionError - If the device unlock shell command did not work
+        """
+
+        # The unlock() method from uiautomator2 does not
+        # work if the DUC is currently locked with the screen turned on
+        if self._duc.info.get("screenOn"):
+            exit_code = self._duc.shell("input keyevent 82").exit_code
+            if exit_code != 0:
+                raise AssertionError("Unable to unlock screen")
+
         self._duc.unlock()
 
     @ld(logger)

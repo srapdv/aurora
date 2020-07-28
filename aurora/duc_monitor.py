@@ -1,4 +1,16 @@
-"""Set of classes that analyzes and capture connected Devices Under Customization (DUC)"""
+"""Set of classes that analyzes and capture connected
+Devices Under Customization (DUC)
+
+Classes:
+    DucAuthFilter
+    DucMonitor
+Misc Variables:
+    __author__
+    __copyright__
+    __maintainer__
+    logger_builder
+    logger
+"""
 __author__ = "Jego Carlo Ramos, Sarah Opena"
 __copyright__ = "Copyright (C) 2020, Blackpearl Technology"
 __maintainer__ = "Jego Carlo Ramos"
@@ -12,7 +24,7 @@ import subprocess
 from helpers.logger import LoggerBuilder
 from duc_listener import DucListener
 
-logger_builder = LoggerBuilder("mayo", __name__)
+logger_builder = LoggerBuilder("stonehenge", __name__)
 logger = logger_builder.create_logger()
 
 
@@ -185,6 +197,7 @@ class DucAuthFilter:
         return tuple(serial_nums)
 
 
+# TODO: Propose this class to be a Singleton
 class DucMonitor(Thread):
     """Represents a DUC monitor running in the background"""
 

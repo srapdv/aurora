@@ -1,4 +1,13 @@
-"""An abstraction and a decorator for the logging module"""
+"""An abstraction and a decorator for the logging module
+Classes:
+    LoggerBuilder
+Functions:
+    logger_decorator
+Misc Variables:
+    __author__
+    __copyright__
+    __maintainer__
+"""
 __author__ = "Jego Carlo Ramos"
 __copyright__ = "Copyright (C) 2020, Blackpearl Technology"
 __maintainer__ = "Jego Carlo Ramos"

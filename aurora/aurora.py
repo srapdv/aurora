@@ -1,14 +1,14 @@
 """Entry point of the application"""
 __author__ = "Jego Carlo Ramos, Simoun De Vera"
 __copyright__ = "Copyright (C) 2020, Blackpearl Technology"
-__maintainer__ = "Simoun De Vera"
+__maintainer__ = "Jego Carlo Ramos"
 
 from customization import CustomizationRunner, CustomizationListener
 from duc_monitor import DucMonitor, DucAuthFilter
 from signal_handler import SignalHandler
 from helpers.logger import LoggerBuilder
 
-log_builder = LoggerBuilder("mayo", __name__)
+log_builder = LoggerBuilder("stonehenge", __name__)
 logger = log_builder.create_logger()
 
 logger.info("App Starting...")

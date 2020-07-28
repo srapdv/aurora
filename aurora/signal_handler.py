@@ -1,10 +1,20 @@
-"""Intercepts and handles OS signals"""
+"""Intercepts and handles OS signals
+
+Classes:
+    SignalHandler
+Misc Variables:
+    __author__
+    __copyright__
+    __maintainer__
+    logger_builder
+    logger
+"""
 import sys
 import signal
 import traceback
 from helpers.logger import LoggerBuilder
 
-log_builder = LoggerBuilder("mayo", __name__)
+log_builder = LoggerBuilder("stonehenge", __name__)
 logger = log_builder.create_logger()
 
 

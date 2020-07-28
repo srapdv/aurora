@@ -84,8 +84,9 @@ class CustomizationListener(DucListener):
         cus_runner = CustomizationRunner(duc, "glb")
         logger.debug(f"Customizing: {duc}")
 
-        self.active_runners.append(duc)
-        cus_runner.start()
+        if duc not in self.active_runners:
+            self.active_runners.append(duc)
+            cus_runner.start()
 
         logger.debug(f"Active Runners: {self.active_runners}")
         logger.debug(f"Active thread count: {threading.active_count()}")

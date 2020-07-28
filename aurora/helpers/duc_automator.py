@@ -49,6 +49,12 @@ class DucAutomator:
 
     @ld(logger)
     @safe_run(logger)
+    def unlock_screen(self):
+        """Unlocks the screen"""
+        self._duc.unlock()
+
+    @ld(logger)
+    @safe_run(logger)
     def turn_on_screen(self):
         """Turns the screen on"""
         self._duc.screen_on()
@@ -103,7 +109,10 @@ class DucAutomator:
             raise ValueError(
                 f"The match_type value of {match_type} is not in {valid_match_types}"
             )
-        self._duc(scrollable=True).scroll.to(text="keyword")
+        if match_type == "exact":
+            self._duc(scrollable=True).scroll.to(steps=2, text=keyword)
+        else:
+            self._duc(scrollable=True).scroll.to(steps=2, textContains=keyword)
 
     @ld(logger)
     @safe_run(logger)

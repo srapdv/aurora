@@ -1,8 +1,6 @@
 """A set of abstractions of the uiautomator2 module
 Classes:
     DucAutomator
-Function:
-    safe_run
 
 Misc Variables:
     __author__
@@ -19,7 +17,6 @@ from uiautomator2 import Device
 from collections import namedtuple
 
 from helpers.logger import LoggerBuilder, logger_decorator as ld
-from helpers.common_decorators import safe_run
 
 logger_builder = LoggerBuilder("stonehenge", __name__)
 logger = logger_builder.create_logger()
@@ -48,31 +45,26 @@ class DucAutomator:
         return f"{self.__class__.__name__}(duc)"
 
     @ld(logger)
-    @safe_run(logger)
     def unlock_screen(self):
         """Unlocks the screen"""
         self._duc.unlock()
 
     @ld(logger)
-    @safe_run(logger)
     def turn_on_screen(self):
         """Turns the screen on"""
         self._duc.screen_on()
 
     @ld(logger)
-    @safe_run(logger)
     def turn_off_screen(self):
         """Turns the screen off"""
         self._duc.screen_off()
 
     @ld(logger)
-    @safe_run(logger)
     def press_home(self):
         """Press the Home button"""
         self._duc.press("home")
 
     @ld(logger)
-    @safe_run(logger)
     def tap_by_text(self, keyword, match_type="contains"):
         """Taps an element on screen using text
 
@@ -94,7 +86,6 @@ class DucAutomator:
                 self._duc(text=keyword).click()
 
     @ld(logger)
-    @safe_run(logger)
     def scroll_to_text(self, keyword, match_type="contains"):
         """Scroll until an element on the screen is visible
 
@@ -115,13 +106,12 @@ class DucAutomator:
             self._duc(scrollable=True).scroll.to(steps=2, textContains=keyword)
 
     @ld(logger)
-    @safe_run(logger)
-    def open_preconfig_screen(self):
-        """Opens up the customization screen
+    def dial(self, dial_input):
+        """Opens the dialer and dials the input provided
         Returns:
             exit_code (int) - Returns 0 if successful, some other integer otherwise
         """
-        dial_input = f"*%23272*{self.imei}"
+
         command = f"am start -a android.intent.action.DIAL -d tel:{dial_input}"
 
         exit_code = self._duc.shell(command).exit_code

@@ -36,7 +36,7 @@ class CustomizationRunner:
 
         da.unlock_screen()
         sleep(2)  # Some DUCs have unlock animations
-        da.open_preconfig_screen()
+        da.dial(f"*%23272*{da.imei}")
         da.tap_by_text("#", match_type="exact")
         da.scroll_to_text(self.customize_to.upper())
         sleep(1.5)  # For some DUCs, the scroll animation needs some time to settle
@@ -44,8 +44,10 @@ class CustomizationRunner:
 
         da.tap_by_text("INSTALL")
         da.tap_by_text("Sales")
-        da.tap_by_text("OK")
-        logger.info(f"PASSED:\t{self.duc_automator.imei} to {self.customize_to}")
+        # da.tap_by_text("OK")
+        logger.info(
+            f"PASSED:\t{self.duc_automator.imei} to {self.customize_to.upper()}"
+        )
 
 
 class CustomizationListener(DucListener):
@@ -60,7 +62,7 @@ class CustomizationListener(DucListener):
 
     def add_duc(self, duc):
         # TODO: Where will the customize_to come from?
-        cus_runner = CustomizationRunner(duc, "sma")
+        cus_runner = CustomizationRunner(duc, "glb")
         logger.debug(f"Customizing: {duc}")
         cus_runner.start()
 

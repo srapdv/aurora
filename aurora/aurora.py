@@ -14,6 +14,7 @@ logger = log_builder.create_logger()
 logger.info("App Starting...")
 
 cl = CustomizationListener()
+
 dm = DucMonitor(cl)
 dm.start()
 

@@ -85,20 +85,25 @@ class LoggerBuilder:
         return logging.LoggerAdapter(logger, self._code_name)
 
 
-# Class decorators from Classes are also a thing, but the come
+# Decorators built from Classes are also a thing, but they come
 # with some limitations with the help() function
 # Reference:
 # https://stackoverflow.com/questions/25973376/functools-update-wrapper-doesnt-work-properly/25973438#25973438
 def logger_decorator(logger_instance, log_level="debug"):
-    """The Decorator pre-fix. This enables the decorator
-    to accept arguments.
+    """A function decorator that logs the execution time and signature
+    of the original function
 
     Parameters:
         logger_instance (logging.LoggerAdapter) - A logger instance from the logging module
         log_level (str) - The logging debug level
     Returns:
-        inner_func (function) - The logging function
+        wrapped_function (function) - The decorated original function
+    Raises:
+        ValueError - If the logger_instance is not an instance of logging.LoggerAdapter
+        ValueError - If the log_level is not in ["info", "debug", "warning", "error", "critical"]
     """
+
+    log_level_clean = str(log_level).lower()
 
     # Type check
     if not isinstance(logger_instance, logging.LoggerAdapter):
@@ -106,20 +111,14 @@ def logger_decorator(logger_instance, log_level="debug"):
             "The logger instance passed is not a child of logging.LoggerAdapter"
         )
 
+    # Invalid value check
     valid_levels = ["info", "debug", "warning", "error", "critical"]
-    if str(log_level).lower() not in valid_levels:
+    if log_level_clean not in valid_levels:
         raise ValueError(
             f"Invalid log level passed: {log_level}, valid values: {valid_levels}"
         )
 
     def inner_func(original_func):
-        """A higher-order function decorator for logging
-        Parameters:
-            original_func - The original function to be decorated
-        Returns:
-            wrapper (function) - The new modified (decorated) function
-        """
-
         @wraps(original_func)
         def wrapper(*args, **kwargs):
             # Capture the execution time
@@ -128,9 +127,9 @@ def logger_decorator(logger_instance, log_level="debug"):
             t2 = time.time()
             t = str(round(t2 - t1, 2))
 
-            # Log the execution
-            msg = f"{original_func.__name__}() executed with args: {args} and kwargs: {kwargs} in {t} secs"
-            log = getattr(logger_instance, log_level.lower())
+            # Log the signature and execution time
+            msg = f"Ran {original_func.__name__}() for {t} secs with args: {args} and kwargs: {kwargs}"
+            log = getattr(logger_instance, log_level_clean)
             log(msg)
             return result
 

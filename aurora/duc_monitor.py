@@ -10,6 +10,7 @@ import pyudev
 import subprocess
 
 from helpers.logger import LoggerBuilder
+from duc_listener import DucListener
 
 logger_builder = LoggerBuilder("mayo", __name__)
 logger = logger_builder.create_logger()
@@ -95,8 +96,6 @@ class DucAuthFilter:
 
         Returns:
             Duc (tuple of namedtuples): An immutable data object
-        Raises:
-            AssertionError: If the length of all DUC attrs are not equal
         """
         serial_nums = cls._get_serial_nums()
 
@@ -104,18 +103,6 @@ class DucAuthFilter:
         imeis = tuple([cls._get_imei(sn) for sn in serial_nums])
         android_vers = tuple([cls._get_android_ver(sn) for sn in serial_nums])
         model_names = tuple([cls._get_model_name(sn) for sn in serial_nums])
-
-        # Check if every attr length are equal, raise an Assertion Error if not.
-        # This could never (theoretically) happen as the methods that fetches
-        # the attrs depend on the _get_serial_nums() method's immutable list return value.
-        # An edge-case would be if one of adb shell commands' behavior changes at some point.
-        length_list = [
-            len(attr) for attr in (serial_nums, imeis, android_vers, model_names)
-        ]
-        if len(set(length_list)) != 1:
-            msg = "The length of DUC attrs are not equal"
-            logger.critical(msg)
-            raise AssertionError(msg)
 
         # Create a tuple of DUC data objects
         Duc = namedtuple("Duc", "serial_no imei android_ver model_name")
@@ -204,10 +191,22 @@ class DucMonitor(Thread):
     not_auth_checker_running = False
 
     def __init__(self, *listeners):
-        """Overrides the __init__ method of the Thread class"""
+        """Overrides the __init__ method of the Thread class
+        Parameters:
+            listeners (DucListener) - arbitrary number of listeners
+        """
         self.authorized_ducs = set()
         self.unauthorized_serial_nums = set()
-        self.listeners = [listener for listener in listeners]
+        # self.listeners = [listener for listener in listeners]
+
+        # Check if listeners implemented the required interface
+        self.listeners = []
+        for listener in listeners:
+            if not isinstance(listener, DucListener):
+                msg = f"Ignored {str(listener)} because it is not a child of {DucListener.__name__}"
+                logger.error(msg)
+            else:
+                self.listeners.append(listener)
 
         # Attrs for pyudev
         context = pyudev.Context()

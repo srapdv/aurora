@@ -67,7 +67,7 @@ class CustomizationRunner(Thread):
             logger.info(f"PASSED:\t{self.duc_automator.imei} to {self.customize_to}")
         except (AssertionError, adbutils.AdbError, u2.UiObjectNotFoundError) as e:
             logger.info(f"FAILED:\t{self.duc_automator.imei} to {self.customize_to}")
-            logger.debug(f"Expected Error: {e}")
+            logger.error(f"Expected Error: {e}")
         except Exception as e:
             logger.info(f"FAILED:\t{self.duc_automator.imei} to {self.customize_to}")
             logger.critical(f"Unexpected Error: {e}")

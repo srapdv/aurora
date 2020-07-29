@@ -110,7 +110,7 @@ class DucAutomator:
             self._duc(scrollable=True).scroll.to(
                 steps=steps, max_swipes=max_swipes, text=keyword
             )
-        elif match_type == "starts_with":
+        elif match_type == "contains":
             self._duc(scrollable=True).scroll.to(
                 steps=steps, max_swipes=max_swipes, textContains=keyword
             )

@@ -47,11 +47,12 @@ class LoggerBuilder:
         # Load values from the logging_config.yaml
         base_path = pathlib.Path(__file__).absolute()
         config_path = f"{base_path.parents[1]}/config/logging_config.yaml"
+        logs_path = f"{base_path.parents[2]}/logs/local.log"
 
         with open(config_path, "r",) as stream:
             config = yaml.load(stream, Loader=yaml.FullLoader)
 
-        cls._log_file_path = config["logger"]["handlers"]["file"]["filename"]
+        cls._log_file_path = logs_path
         cls._log_format = config["logger"]["format"]
         cls._log_level_str = config["logger"]["level"]
         cls._console_level = config["logger"]["handlers"]["console"]["level"]

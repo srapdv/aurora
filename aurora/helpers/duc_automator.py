@@ -13,7 +13,7 @@ __author__ = "Jego Carlo Ramos, Simoun De Vera"
 __copyright__ = "Copyright (C) 2020, Blackpearl Technology"
 __maintainer__ = "Jego Carlo Ramos"
 
-from uiautomator2 import Device
+import uiautomator2 as u2
 from collections import namedtuple
 from threading import Thread
 
@@ -35,13 +35,7 @@ class DucAutomator:
         self.android_ver = duc.android_ver
         self.model_name = duc.model_name
         self.customize_to = customize_to
-        self._duc = Device(self.serial_no)
-
-        # Screen-size helpers
-        self.y_display = self._duc.info["displayHeight"]
-        self.x_display = self._duc.info["displayWidth"]
-        self.y_mid = self.y_display / 2
-        self.x_mid = self.x_display / 2
+        self._duc = u2.Device(self.serial_no)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(duc)"
@@ -84,40 +78,46 @@ class DucAutomator:
 
         Parameters:
             keyword (str): The keyword to search for
-            match_type (str): Check if the an element contains or exactly matches the keyword
+            match_type (str): Valid types ["exact", "contains", "starts_with"]
         """
-        # Check arguments
-        match_type = str(match_type).lower()
-        valid_match_types = ["contains", "exact"]
-        if match_type not in valid_match_types:
-            raise ValueError(
-                f"The match_type value of {match_type} is not in {valid_match_types}"
-            )
-        else:
-            if match_type == "contains":
-                self._duc(textContains=keyword).click()
-            else:
-                self._duc(text=keyword).click()
+        selector = {
+            "selector_type": "by_text",
+            "selector_value": keyword,
+            "selector_meta": match_type,
+        }
+        el = self._get_element(selector)
+
+        el.click()
 
     @ld(logger)
-    def scroll_to_text(self, keyword, match_type="contains"):
+    def scroll_to_text(self, keyword, match_type="starts_with"):
         """Scroll until an element on the screen is visible
 
         Parameters:
             keyword (str): The keyword to search for
-            match_type (str): Check if the an element contains or exactly matches the keyword
+            match_type (str): Valid types ["exact", "contains", "starts_with"]
         """
-        # Check arguments
-        match_type = str(match_type).lower()
-        valid_match_types = ["contains", "exact"]
-        if match_type not in valid_match_types:
-            raise ValueError(
-                f"The match_type value of {match_type} is not in {valid_match_types}"
-            )
+
+        # Check if there is a scrollable element in the screen
+        found_scrollable = self._duc(scrollable=True)
+        if not found_scrollable.exists(timeout=1):
+            logger.debug("Pre-config screen not scrollable")
+            return
+
+        steps = 100
+        max_swipes = 1_000
         if match_type == "exact":
-            self._duc(scrollable=True).scroll.to(steps=2, text=keyword)
-        else:
-            self._duc(scrollable=True).scroll.to(steps=2, textContains=keyword)
+            self._duc(scrollable=True).scroll.to(
+                steps=steps, max_swipes=max_swipes, text=keyword
+            )
+        elif match_type == "starts_with":
+            self._duc(scrollable=True).scroll.to(
+                steps=steps, max_swipes=max_swipes, textContains=keyword
+            )
+        elif match_type == "starts_with":
+            self._duc(scrollable=True).scroll.to(
+                steps=steps, max_swipes=max_swipes, textStartsWith=keyword
+            )
 
     @ld(logger)
     def dial(self, dial_input):
@@ -131,6 +131,38 @@ class DucAutomator:
         exit_code = self._duc.shell(command).exit_code
 
         return exit_code
+
+    def _get_element(self, keypair):
+        selector_type = keypair.get("selector_type")
+        selector_value = keypair.get("selector_value")
+        selector_meta = keypair.get("selector_meta")
+
+        if selector_type == "by_text":
+
+            # Check valid meta
+            selector_meta = str(selector_meta).lower()
+            valid_selector_meta = ["contains", "exact", "starts_with"]
+            if selector_meta not in valid_selector_meta:
+                raise ValueError(
+                    f"The match_type value of {selector_meta} is not in {valid_selector_meta}"
+                )
+
+            el = None
+            if selector_meta == "exact":
+                el = self._duc(text=selector_value)
+            elif selector_meta == "contains":
+                el = self._duc(textContains=selector_value)
+            elif selector_meta == "starts_with":
+                el = self._duc(textStartsWith=selector_value)
+            return el
+
+    def _tap_center(self):
+        x, y = self._duc.window_size()
+        x_mid = x / 2
+        y_mid = y / 2
+        self._duc.touch.down(x_mid, y_mid)
+        self._duc.touch.sleep(0.3)
+        self._duc.touch.up(x_mid, y_mid)
 
 
 if __name__ == "__main__":

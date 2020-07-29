@@ -30,7 +30,7 @@ class CustomizationRunner(Thread):
             duc (Duc) - The DUC data object (namedtuple) to automate
             customize_to - Where the DUC should be customized to
         """
-        self.duc_automator = DucAutomator(duc, customize_to)
+        self.duc = duc
         self.customize_to = customize_to.upper()
 
         # Call the __init__() of the Thread class
@@ -47,6 +47,7 @@ class CustomizationRunner(Thread):
     @ld(logger)
     def run(self):
         try:
+            self.duc_automator = DucAutomator(self.duc, self.customize_to)
             da = self.duc_automator
             logger.info(f"Customizing: {da.imei} to {self.customize_to}")
 
@@ -64,9 +65,12 @@ class CustomizationRunner(Thread):
             da.tap_by_text("Sales")
             # da.tap_by_text("OK")
             logger.info(f"PASSED:\t{self.duc_automator.imei} to {self.customize_to}")
-        except Exception as e:
-            logger.error(e)
+        except (AssertionError, adbutils.AdbError, u2.UiObjectNotFoundError) as e:
             logger.info(f"FAILED:\t{self.duc_automator.imei} to {self.customize_to}")
+            logger.debug(f"Expected Error: {e}")
+        except Exception as e:
+            logger.info(f"FAILED:\t{self.duc_automator.imei} to {self.customize_to}")
+            logger.critical(f"Unexpected Error: {e}")
 
 
 class CustomizationListener(DucListener):
@@ -97,7 +101,7 @@ class CustomizationListener(DucListener):
         try:
             # Ignore the KeyError
             self.active_runners.remove(duc)
-        except KeyError:
+        except ValueError:
             pass
 
         logger.debug(f"Active Runners: {self.active_runners}")

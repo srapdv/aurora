@@ -1,4 +1,4 @@
-"""A contract that all DUC listeners must adhere to
+"""A meta-class that enforces all its children to override its methods
 Classes:
     DucListener
 Misc Variables:

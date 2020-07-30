@@ -12,7 +12,7 @@ import threading
 from time import sleep
 from threading import Thread
 
-from duc_listener import DucListener
+from helpers.duc_listener import DucListener
 from helpers.logger import LoggerBuilder, logger_decorator as ld
 from helpers.duc_automator import DucAutomator
 
@@ -47,23 +47,7 @@ class CustomizationRunner(Thread):
     @ld(logger)
     def run(self):
         try:
-            self.duc_automator = DucAutomator(self.duc, self.customize_to)
-            da = self.duc_automator
-            logger.info(f"Customizing: {da.imei} to {self.customize_to}")
-
-            # Recover when the screen is turned off
-            da.unlock_screen()
-            sleep(2)  # Some DUCs have unlock animations
-
-            da.dial(f"*%23272*{da.imei}")
-            da.tap_by_text("#", match_type="exact")
-            da.scroll_to_text(self.customize_to)
-            sleep(1.5)  # For some DUCs, the scroll animation needs some time to settle
-            da.tap_by_text(self.customize_to)
-
-            da.tap_by_text("INSTALL")
-            da.tap_by_text("Sales")
-            # da.tap_by_text("OK")
+            self._start_customization_process()
             logger.info(f"PASSED:\t{self.duc_automator.imei} to {self.customize_to}")
         except (AssertionError, adbutils.AdbError, u2.UiObjectNotFoundError) as e:
             logger.info(f"FAILED:\t{self.duc_automator.imei} to {self.customize_to}")
@@ -71,6 +55,25 @@ class CustomizationRunner(Thread):
         except Exception as e:
             logger.info(f"FAILED:\t{self.duc_automator.imei} to {self.customize_to}")
             logger.critical(f"Unexpected Error: {e}")
+
+    @ld(logger)
+    def _start_customization_process(self):
+        self.duc_automator = DucAutomator(self.duc, self.customize_to)
+        da = self.duc_automator
+        logger.info(f"Customizing: {da.imei} to {self.customize_to}")
+
+        # Recover when the screen is turned off
+        da.unlock_screen()
+
+        da.dial(f"*%23272*{da.imei}")
+        da.tap_by_text("#", match_type="exact")
+        da.scroll_to_text(self.customize_to)
+        sleep(1.5)  # For some DUCs, the scroll animation needs some time to settle
+        da.tap_by_text(self.customize_to)
+
+        da.tap_by_text("INSTALL")
+        da.tap_by_text("Sales")
+        # da.tap_by_text("OK")
 
 
 class CustomizationListener(DucListener):

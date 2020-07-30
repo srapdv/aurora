@@ -53,9 +53,11 @@ class DucAutomator:
         if self._duc.info.get("screenOn"):
             exit_code = self._duc.shell("input keyevent 82").exit_code
             if exit_code != 0:
-                raise AssertionError("Unable to unlock screen")
-
-        self._duc.unlock()
+                # Fallback unlock (wipe up by 60%)
+                self._duc.swipe_ext("up", 0.6)
+        else:
+            # The screen is off
+            self._duc.unlock()
 
     @ld(logger)
     def turn_on_screen(self):

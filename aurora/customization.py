@@ -1,5 +1,9 @@
 """This is where the customization logic happens.
 Let's have a runner instance for every device.
+Misc Variables:
+    __author__
+    __copyright__
+    __maintainer__
 """
 __author__ = "Jego Carlo Ramos, Simoun De Vera"
 __copyright__ = "Copyright (C) 2020, Blackpearl Technology"
@@ -15,6 +19,7 @@ from threading import Thread
 from helpers.interface_listeners import DucListener
 from helpers.logger import LoggerBuilder, logger_decorator as ld
 from helpers.duc_automator import DucAutomator
+from operation_results import ReportsListener
 
 
 log_builder = LoggerBuilder("stonehenge", __name__)
@@ -24,14 +29,24 @@ logger = log_builder.create_logger()
 class CustomizationRunner(Thread):
     """Represents a Customization Runner"""
 
-    def __init__(self, duc, customize_to):
+    def __init__(self, duc, customize_to, *listeners):
         """Initializes the CustomizationRunner
         Parameters:
             duc (Duc) - The DUC data object (namedtuple) to automate
             customize_to - Where the DUC should be customized to
+            listeners (*args of CustomizationListeners) - arbitrary number of listeners
         """
         self.duc = duc
         self.customize_to = customize_to.upper()
+
+        # Check if listeners implemented the required interface
+        self.listeners = []
+        for listener in listeners:
+            if not isinstance(listener, ReportsListener):
+                msg = f"Ignored {str(listener)} because it is not a child of {ReportsListener.__name__}"
+                logger.error(msg)
+            else:
+                self.listeners.append(listener)
 
         # Call the __init__() of the Thread class
         super().__init__()
@@ -48,13 +63,16 @@ class CustomizationRunner(Thread):
     def run(self):
         try:
             self._start_customization_process()
-            logger.info(f"PASSED:\t{self.duc_automator.imei} to {self.customize_to}")
+            for listener in self.listeners:
+                listener.passed(self.duc, self.customize_to)
         except (AssertionError, adbutils.AdbError, u2.UiObjectNotFoundError) as e:
-            logger.info(f"FAILED:\t{self.duc_automator.imei} to {self.customize_to}")
             logger.error(f"Expected Error: {e}")
+            for listener in self.listeners:
+                listener.failed(self.duc, self.customize_to)
         except Exception as e:
-            logger.info(f"FAILED:\t{self.duc_automator.imei} to {self.customize_to}")
             logger.critical(f"Unexpected Error: {e}")
+            for listener in self.listeners:
+                listener.failed(self.duc, self.customize_to)
 
     @ld(logger)
     def _start_customization_process(self):
@@ -67,6 +85,9 @@ class CustomizationRunner(Thread):
 
         da.dial(f"*%23272*{da.imei}")
         da.tap_by_text("#", match_type="exact")
+
+        sleep(1)  # For the android 8.1 (Lite)
+
         da.scroll_to_text(self.customize_to)
         sleep(1.5)  # For some DUCs, the scroll animation needs some time to settle
         da.tap_by_text(self.customize_to)
@@ -88,7 +109,8 @@ class CustomizationListener(DucListener):
 
     def add_duc(self, duc):
         # TODO: Where will the customize_to come from?
-        cus_runner = CustomizationRunner(duc, "glb")
+        rl = ReportsListener()
+        cus_runner = CustomizationRunner(duc, "glb", rl)
         logger.debug(f"Customizing: {duc}")
 
         if duc not in self.active_runners:

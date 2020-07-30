@@ -39,7 +39,6 @@ class DucMonitor(Thread):
         """
         self.authorized_ducs = set()
         self.unauthorized_serial_nums = set()
-        # self.listeners = [listener for listener in listeners]
 
         # Check if listeners implemented the required interface
         self.listeners = []

@@ -35,24 +35,24 @@ class DucListener(ABC):
 
 
 class CustomizationListener(ABC):
-    """Represents a listener for customization results of DUCs"""
+    """Represents a listener for the customization process of DUCs"""
 
     @abstractmethod
-    def started(self):
+    def started(self, duc, customize_to):
         pass
 
     @abstractmethod
-    def passed(self):
+    def passed(self, duc, customize_to):
         pass
 
     @abstractmethod
-    def failed(self):
+    def failed(self, duc, customize_to):
         pass
 
     @abstractmethod
-    def skipped(self):
+    def skipped(self, duc, customize_to):
         pass
 
     @abstractmethod
-    def completed(self):
+    def completed(self, duc, customize_to):
         pass

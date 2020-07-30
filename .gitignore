@@ -2,3 +2,5 @@
 aurora/**/__pycache__
 logs/*
 !logs/.gitkeep
+out/*
+!out/*/.gitkeep

@@ -24,7 +24,7 @@ logger = logger_builder.create_logger()
 
 
 class DucAutomator:
-    def __init__(self, duc, customize_to):
+    def __init__(self, duc, customize_to, config):
         """Initializes the DucAutomator
         Parameters:
             duc (Duc) - The DUC data object (namedtuple) to automate
@@ -35,6 +35,7 @@ class DucAutomator:
         self.android_ver = duc.android_ver
         self.model_name = duc.model_name
         self.customize_to = customize_to
+        self.config = config
         self._duc = u2.Device(self.serial_no)
 
     def __repr__(self):
@@ -42,11 +43,7 @@ class DucAutomator:
 
     @ld(logger)
     def unlock_screen(self):
-        """Unlocks the screen
-
-        Raises:
-            AssertionError - If the device unlock shell command did not work
-        """
+        """Unlocks the screen"""
 
         # The unlock() method from uiautomator2 does not
         # work if the DUC is currently locked with the screen turned on
@@ -99,6 +96,10 @@ class DucAutomator:
             keyword (str): The keyword to search for
             match_type (str): Valid types ["exact", "contains", "starts_with"]
         """
+        # Check for valid match type
+        valid_match_types = ("exact", "contains", "starts_with")
+        if match_type not in valid_match_types:
+            raise ValueError(f"Invalid match_type argument: {match_type}")
 
         # Check if there is a scrollable element in the screen
         found_scrollable = self._duc(scrollable=True)
@@ -124,13 +125,18 @@ class DucAutomator:
     @ld(logger)
     def dial(self, dial_input):
         """Opens the dialer and dials the input provided
-        Returns:
-            exit_code (int) - Returns 0 if successful, some other integer otherwise
+        Raises:
+            AssertionError - If the dialer failed to launch
         """
 
-        command = f"am start -a android.intent.action.DIAL -d tel:{dial_input}"
+        # They require special implementation for GO models
+        if self.model_name in self.config["special_models"]["go_versions"]:
+            self._go_special_dial(dial_input)
 
+        # Implementation for normal DUCs
+        command = f"am start -a android.intent.action.DIAL -d tel:{dial_input}"
         exit_code = self._duc.shell(command).exit_code
+        assert exit_code == 0, "Failed to launch the dialer"
 
         return exit_code
 
@@ -165,6 +171,11 @@ class DucAutomator:
         self._duc.touch.down(x_mid, y_mid)
         self._duc.touch.sleep(0.3)
         self._duc.touch.up(x_mid, y_mid)
+
+    def _go_special_dial(self, dial_input):
+        command = f"am start -a android.intent.action.DIAL -d tel:{dial_input}"
+        exit_code = self._duc.shell(command).exit_code
+        assert exit_code == 0, "Failed to launch the dialer"
 
 
 if __name__ == "__main__":

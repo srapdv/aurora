@@ -21,6 +21,9 @@ from helpers.logger import LoggerBuilder, logger_decorator as ld
 from helpers.duc_automator import DucAutomator
 from operation_results import ReportsListener
 
+# Load Global Customization configs
+from config_resolver import CUSTOMIZATION_CONFIG
+
 
 log_builder = LoggerBuilder("stonehenge", __name__)
 logger = log_builder.create_logger()
@@ -76,7 +79,9 @@ class CustomizationRunner(Thread):
 
     @ld(logger)
     def _start_customization_process(self):
-        self.duc_automator = DucAutomator(self.duc, self.customize_to)
+        self.duc_automator = DucAutomator(
+            self.duc, self.customize_to, CUSTOMIZATION_CONFIG
+        )
         da = self.duc_automator
         logger.info(f"Customizing: {da.imei} to {self.customize_to}")
 

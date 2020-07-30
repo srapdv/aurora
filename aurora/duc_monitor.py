@@ -20,7 +20,7 @@ import pyudev
 
 from helpers.logger import LoggerBuilder
 from helpers.duc_auth_filter import DucAuthFilter
-from helpers.duc_listener import DucListener
+from helpers.interface_listeners import DucListener
 
 logger_builder = LoggerBuilder("stonehenge", __name__)
 logger = logger_builder.create_logger()

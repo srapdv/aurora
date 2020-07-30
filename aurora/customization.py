@@ -12,7 +12,7 @@ import threading
 from time import sleep
 from threading import Thread
 
-from helpers.duc_listener import DucListener
+from helpers.interface_listeners import DucListener
 from helpers.logger import LoggerBuilder, logger_decorator as ld
 from helpers.duc_automator import DucAutomator
 

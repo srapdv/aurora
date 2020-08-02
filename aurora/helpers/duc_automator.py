@@ -18,13 +18,14 @@ from collections import namedtuple
 from threading import Thread
 
 from helpers.logger import LoggerBuilder, logger_decorator as ld
+from config_resolver import CustomizationConfigLoader as ccl
 
 logger_builder = LoggerBuilder("stonehenge", __name__)
 logger = logger_builder.create_logger()
 
 
 class DucAutomator:
-    def __init__(self, duc, customize_to, config):
+    def __init__(self, duc, customize_to):
         """Initializes the DucAutomator
         Parameters:
             duc (Duc) - The DUC data object (namedtuple) to automate
@@ -35,7 +36,6 @@ class DucAutomator:
         self.android_ver = duc.android_ver
         self.model_name = duc.model_name
         self.customize_to = customize_to
-        self.config = config
         self._duc = u2.Device(self.serial_no)
 
     def __repr__(self):
@@ -130,8 +130,8 @@ class DucAutomator:
         """
 
         # They require special implementation for GO models
-        if self.model_name in self.config["special_models"]["go_versions"]:
-            self._go_special_dial(dial_input)
+        if self.model_name in ccl.load_special_models()["go_versions"]:
+            return self._go_special_dial(dial_input)
 
         # Implementation for normal DUCs
         command = f"am start -a android.intent.action.DIAL -d tel:{dial_input}"
@@ -139,6 +139,14 @@ class DucAutomator:
         assert exit_code == 0, "Failed to launch the dialer"
 
         return exit_code
+
+    def confirm_install(self):
+
+        if self.model_name in ccl.load_special_models()["go_versions"]:
+            return self.tap_by_text("SALES CODE CHANGE")
+
+        self.tap_by_text("Sales")
+        self.tap_by_text("OK")
 
     def _get_element(self, keypair):
         selector_type = keypair.get("selector_type")
@@ -173,9 +181,15 @@ class DucAutomator:
         self._duc.touch.up(x_mid, y_mid)
 
     def _go_special_dial(self, dial_input):
-        command = f"am start -a android.intent.action.DIAL -d tel:{dial_input}"
-        exit_code = self._duc.shell(command).exit_code
-        assert exit_code == 0, "Failed to launch the dialer"
+        self._duc.app_start(
+            "com.android.contacts", "com.android.dialer.app.DialtactsActivity"
+        )
+        self._duc(
+            resourceId="com.android.contacts:id/floating_action_button_container"
+        ).click()
+
+        self.tap_by_text("5", "exact")
+        self._duc(focused=True).set_text(f"*#272*{self.imei}")
 
 
 if __name__ == "__main__":

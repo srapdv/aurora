@@ -7,24 +7,27 @@ import pathlib
 import yaml
 
 
-class ConfigLoader:
+class CustomizationConfigLoader:
     """Represents a YAML config loader"""
 
-    @staticmethod
-    def load_special_models():
-        base_path = pathlib.Path(__file__).absolute()
-        config_path = f"{base_path.parents[1]}/aurora/config/customization.yaml"
+    base_path = pathlib.Path(__file__).absolute()
+    config_path = f"{base_path.parents[1]}/aurora/config/customization.yaml"
 
-        print(config_path)
-
-        with open(config_path, "r",) as stream:
+    @classmethod
+    def load_special_models(cls):
+        with open(cls.config_path, "r",) as stream:
             customization_config = yaml.load(stream, Loader=yaml.FullLoader)
 
-        return customization_config
+        return customization_config["special_models"]
 
+    @classmethod
+    def load_customize_to(cls):
+        with open(cls.config_path, "r",) as stream:
+            customization_config = yaml.load(stream, Loader=yaml.FullLoader)
 
-CUSTOMIZATION_CONFIG = ConfigLoader.load_special_models()
+        return customization_config["customize_to"]
+
 
 if __name__ == "__main__":
-    config = ConfigLoader.load_special_models()
+    config = CustomizationConfigLoader.load_special_models()
     print(config)

@@ -11,7 +11,7 @@ __maintainer__ = "Simoun De Vera"
 
 import adbutils
 import uiautomator2 as u2
-import concurrent.futures
+import pathlib
 import threading
 from time import sleep
 from threading import Thread
@@ -20,9 +20,7 @@ from helpers.interface_listeners import DucListener
 from helpers.logger import LoggerBuilder, logger_decorator as ld
 from helpers.duc_automator import DucAutomator
 from operation_results import ReportsListener
-
-# Load Global Customization configs
-from config_resolver import CUSTOMIZATION_CONFIG
+from config_resolver import CustomizationConfigLoader as ccl
 
 
 log_builder = LoggerBuilder("stonehenge", __name__)
@@ -79,9 +77,7 @@ class CustomizationRunner(Thread):
 
     @ld(logger)
     def _start_customization_process(self):
-        self.duc_automator = DucAutomator(
-            self.duc, self.customize_to, CUSTOMIZATION_CONFIG
-        )
+        self.duc_automator = DucAutomator(self.duc, self.customize_to)
         da = self.duc_automator
         logger.info(f"Customizing: {da.imei} to {self.customize_to}")
 
@@ -98,8 +94,7 @@ class CustomizationRunner(Thread):
         da.tap_by_text(self.customize_to)
 
         da.tap_by_text("INSTALL")
-        da.tap_by_text("Sales")
-        # da.tap_by_text("OK")
+        da.confirm_install()
 
 
 class CustomizationListener(DucListener):
@@ -113,9 +108,9 @@ class CustomizationListener(DucListener):
         return f"{self.__class__.__name__}()"
 
     def add_duc(self, duc):
-        # TODO: Where will the customize_to come from?
+        customize_to = ccl.load_customize_to()
         rl = ReportsListener()
-        cus_runner = CustomizationRunner(duc, "glb", rl)
+        cus_runner = CustomizationRunner(duc, customize_to, rl)
         logger.debug(f"Customizing: {duc}")
 
         if duc not in self.active_runners:
